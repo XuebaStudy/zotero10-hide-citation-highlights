@@ -29,14 +29,22 @@ Installation and interaction have not yet been verified in the Zotero interface.
 
 ## Installation and migration
 
-Download `zotero10-hide-citation-highlights.xpi` from [this repository's Releases](https://github.com/XuebaStudy/zotero10-hide-citation-highlights/releases), or build it locally. If no release is available, use the local build instructions below.
+GitHub Actions builds ready-to-install `.xpi` packages in the cloud. Download `zotero10-hide-citation-highlights.xpi` from [Releases](https://github.com/XuebaStudy/zotero10-hide-citation-highlights/releases) when a version has been published. If no release package is available, download a cloud build using the instructions below, or [build locally](#local-build).
 
 1. If the upstream plugin is installed, disable or uninstall it first to avoid both plugins modifying the reader.
 2. In Zotero, open **Tools → Plugins → Gear menu → Install Plugin From File**.
-3. Select the locally built `.xpi` or a package released by this repository.
+3. Select `zotero10-hide-citation-highlights.xpi` from a release, an extracted cloud build, or a local build.
 4. Open a PDF containing citation links and wait about one second. The blue boxes should disappear, and links should remain clickable.
 
 This version uses the independent ID `zotero10-hide-citation-highlights@XuebaStudy` and does not automatically replace the upstream plugin. It does not remove PDF links or modify library data. Disabling it should restore the blue boxes; if a page does not refresh, close and reopen the PDF.
+
+## Cloud build download
+
+1. Open [Actions → Build](https://github.com/XuebaStudy/zotero10-hide-citation-highlights/actions/workflows/build.yml) and select a successful run for the branch or commit you want to install.
+2. In **Artifacts**, download `plugin-ubuntu-latest` or `plugin-windows-latest`. Both contain the same plugin files and can be installed on any supported operating system.
+3. Extract the downloaded ZIP and install the included `zotero10-hide-citation-highlights.xpi` in Zotero.
+
+You must be signed in to GitHub to download Actions artifacts. Build artifacts are retained for 7 days. Repository maintainers can trigger a fresh build with **Run workflow**; pushes and pull requests also trigger builds automatically.
 
 ## Local build
 
@@ -82,4 +90,3 @@ Automatic updates become available only after the update manifest and installati
 ## Credits
 
 Based on [jkroes/zotero-hide-citation-highlights](https://github.com/jkroes/zotero-hide-citation-highlights), with Zotero 10 support maintained by XuebaStudy.
-
