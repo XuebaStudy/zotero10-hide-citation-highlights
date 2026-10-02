@@ -1,0 +1,54 @@
+name: Build
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check JavaScript syntax
+        run: node --check bootstrap.js
+
+      - name: Validate metadata
+        id: meta
+        run: python scripts/verify.py --github-output "$env:GITHUB_OUTPUT"
+
+      - name: Build package
+        run: ./build.ps1
+
+      - name: Verify package
+        env:
+          XPI_NAME: ${{ steps.meta.outputs.xpi_name }}
+        run: python scripts/verify.py --xpi "$env:XPI_NAME"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: plugin-${{ matrix.os }}
+          path: ${{ steps.meta.outputs.xpi_name }}
+          if-no-files-found: error
+          retention-days: 7
+
+

@@ -1,0 +1,15 @@
+{
+  "manifest_version": 2,
+  "name": "Zotero 10 Hide Citation Highlights",
+  "version": "0.2.0",
+  "description": "Hides the blue boxes the Zotero PDF reader paints over detected citations and cross-reference links (e.g. LaTeX hyperref links). Links stay clickable; only the highlight box is removed.",
+  "author": "XuebaStudy (Zotero 10 adaptation); jkroes (original plugin)",
+  "applications": {
+    "zotero": {
+      "id": "zotero10-hide-citation-highlights@XuebaStudy",
+      "update_url": "https://github.com/XuebaStudy/zotero10-hide-citation-highlights/releases/download/release/updates.json",
+      "strict_min_version": "7.0",
+      "strict_max_version": "10.0.*"
+    }
+  }
+}

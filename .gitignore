@@ -1,0 +1,5 @@
+.DS_Store
+*.xpi
+.verification/
+updates.json
+__pycache__/

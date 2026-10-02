@@ -1,0 +1,77 @@
+name: Release
+
+# Only stable vX.Y.Z releases are supported; metadata validation enforces this.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+# All versions write the same update pointer. Do not cancel an active release.
+concurrency:
+  group: release-publication
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Validate release metadata
+        id: meta
+        run: |
+          python3 scripts/verify.py --tag "$GITHUB_REF_NAME" \
+            --repository "$GITHUB_REPOSITORY" --github-output "$GITHUB_OUTPUT"
+
+      - name: Check JavaScript syntax
+        run: node --check bootstrap.js
+
+      - name: Build package
+        shell: pwsh
+        run: ./build.ps1
+
+      - name: Verify package and generate update manifest
+        env:
+          XPI_NAME: ${{ steps.meta.outputs.xpi_name }}
+        run: |
+          python3 scripts/verify.py --tag "$GITHUB_REF_NAME" \
+            --repository "$GITHUB_REPOSITORY" --xpi "$XPI_NAME" --updates updates.json
+
+      - name: Publish versioned release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ github.ref_name }}
+          files: |
+            ${{ steps.meta.outputs.xpi_name }}
+            updates.json
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          prerelease: false
+          make_latest: "true"
+
+      # Zotero reads update_url under the stable release tag.
+      - name: Refresh update manifest pointer
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: release
+          target_commitish: ${{ github.sha }}
+          name: Update manifest (Zotero auto-update)
+          files: updates.json
+          fail_on_unmatched_files: true
+          body: "Stable pointer Zotero reads to auto-update this plugin. Updated automatically on each version release."
+          prerelease: true
+          make_latest: "false"
+
