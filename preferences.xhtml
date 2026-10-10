@@ -1,0 +1,19 @@
+<vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+      xmlns:html="http://www.w3.org/1999/xhtml">
+  <groupbox>
+    <label><html:h2>Citation links</html:h2></label>
+    <checkbox id="zotero10-hide-citation-highlights-disable-clicks"
+              label="Disable citation and internal-link clicks"
+              preference="extensions.zotero10-hide-citation-highlights.disableCitationClicks"/>
+    <description>
+      Off by default. Enable to prevent accidental jumps to references,
+      figures, and other sections inside a PDF. Citation and internal-link
+      hover previews are also disabled. External web links, text selection,
+      and annotations remain available.
+    </description>
+    <description>
+      Changes apply immediately to open PDF readers and are saved for future sessions.
+      Clear the checkbox to restore link interactions.
+    </description>
+  </groupbox>
+</vbox>

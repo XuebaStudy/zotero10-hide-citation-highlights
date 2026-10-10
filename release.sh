@@ -4,13 +4,13 @@
 # the tag (which triggers .github/workflows/release.yml to build the .xpi and
 # publish the GitHub release).
 #
-# Usage: bash release.sh v0.2.0   (the leading "v" is optional)
+# Usage: bash release.sh v0.3.0   (the leading "v" is optional)
 #
 set -euo pipefail
 
 raw="${1:-}"
 if [ -z "$raw" ]; then
-  echo "usage: $0 <version>   e.g. $0 v0.2.0" >&2
+  echo "usage: $0 <version>   e.g. $0 v0.3.0" >&2
   exit 1
 fi
 
@@ -18,7 +18,7 @@ version="${raw#v}"
 tag="v${version}"
 
 if ! printf '%s' "$version" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
-  echo "error: '$raw' is not a stable X.Y.Z version like v0.2.0" >&2
+  echo "error: '$raw' is not a stable X.Y.Z version like v0.3.0" >&2
   exit 1
 fi
 

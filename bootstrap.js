@@ -7,7 +7,8 @@
  *   The light-blue boxes the Zotero PDF reader paints over detected citations
  *   and cross-reference (internal) links — e.g. the author/year citations a
  *   LaTeX `hyperref` document embeds. Links stay clickable and their popups
- *   still work; only the persistent painted box is removed.
+ *   still work by default; an optional setting disables citation/internal-link
+ *   interactions without changing PDF data.
  *
  * Zotero 10.0.3 uses Page._pushOverlays() to build DOM overlays instead of
  * Renderer._drawOverlays(). Patch only the citation tint pass in either
@@ -43,6 +44,13 @@ var HideCitationHighlights = {
   timer: null,
   _win: null,
   _workers: null, // WeakMap<readerWindow, contentFunction>
+  clickPreference: "extensions.zotero10-hide-citation-highlights.disableCitationClicks",
+  _prefObserver: null,
+
+  disableCitationClicks() {
+    try { return Zotero.Prefs.get(this.clickPreference, true) === true; }
+    catch (e) { return false; }
+  },
 
   log(msg) {
     try { Zotero.debug("[HideCitationHighlights] " + msg); } catch (e) {}
@@ -130,6 +138,51 @@ var HideCitationHighlights = {
     }
   `,
 
+  // Patch the per-view hit test, rather than swallowing pointer events.
+  // The reader still handles text selection, annotations, and pointer cleanup.
+  // Internal links include embedded PDF links to references, figures, or sections.
+  SET_CLICKS_BODY: `
+    if (!view || !view._pages) return;
+    var key = "__hideLinks_clickState";
+    var state = view[key];
+    if (disableClicks && !state && typeof view._getSelectableOverlay === "function") {
+      var original = view._getSelectableOverlay;
+      var hadOwn = Object.prototype.hasOwnProperty.call(view, "_getSelectableOverlay");
+      state = { original: original, hadOwn: hadOwn, wrapped: null, enabled: true };
+      var wrapped = function () {
+        var overlay = original.apply(this, arguments);
+        if (state.enabled && overlay && (overlay.type === "citation" || overlay.type === "internal-link")) {
+          return null;
+        }
+        return overlay;
+      };
+      state.wrapped = wrapped;
+      view[key] = state;
+      view._getSelectableOverlay = wrapped;
+    }
+    else if (!disableClicks && state) {
+      state.enabled = false;
+      if (view._getSelectableOverlay === state.wrapped) {
+        if (state.hadOwn) view._getSelectableOverlay = state.original;
+        else delete view._getSelectableOverlay;
+      }
+      delete view[key];
+    }
+    else return;
+
+    // Clear a preview already visible when the setting is enabled.
+    if (disableClicks) {
+      view._hover = null;
+      var selected = view._selectedOverlay;
+      if (selected && (selected.type === "citation" || selected.type === "internal-link")) {
+        if (view._overlayPopupDelayer) view._overlayPopupDelayer.close(function () {});
+        view._selectedOverlay = null;
+        if (typeof view._onSetOverlayPopup === "function") view._onSetOverlayPopup(null);
+      }
+    }
+    if (typeof view._render === "function") view._render();
+  `,
+
   // Build (and cache) a function compiled in the reader window's own scope.
   worker(cw, body, cacheKey) {
     if (!cw || !cw.wrappedJSObject) return null;
@@ -137,7 +190,7 @@ var HideCitationHighlights = {
       let cached = this._workers.get(cw);
       if (cached && cached[cacheKey]) return cached[cacheKey];
     }
-    let fn = new cw.wrappedJSObject.Function("view", body);
+    let fn = new cw.wrappedJSObject.Function("view", "disableClicks", body);
     if (cacheKey) {
       let bag = this._workers.get(cw) || {};
       bag[cacheKey] = fn;
@@ -146,7 +199,7 @@ var HideCitationHighlights = {
     return fn;
   },
 
-  runOnReader(reader, body, cacheKey) {
+  runOnReader(reader, body, cacheKey, disableClicks = false) {
     try {
       const Cu = Components.utils;
       const cw = reader && reader._iframeWindow;
@@ -156,7 +209,7 @@ var HideCitationHighlights = {
       if (!ir) return;
       for (const rawView of [ir._primaryView, ir._secondaryView]) {
         if (rawView) {
-          try { fn(Cu.waiveXrays(rawView)); } catch (e) { this.log("view error: " + e); }
+          try { fn(Cu.waiveXrays(rawView), disableClicks); } catch (e) { this.log("view error: " + e); }
         }
       }
     } catch (e) {
@@ -168,7 +221,11 @@ var HideCitationHighlights = {
     try {
       const readers = Zotero.Reader && Zotero.Reader._readers;
       if (!readers) return;
-      for (const reader of readers) this.runOnReader(reader, this.PATCH_BODY, "patch");
+      const disableClicks = this.disableCitationClicks();
+      for (const reader of readers) {
+        this.runOnReader(reader, this.PATCH_BODY, "patch");
+        this.runOnReader(reader, this.SET_CLICKS_BODY, "clicks", disableClicks);
+      }
     } catch (e) {
       this.log("sweep error: " + e);
     }
@@ -177,6 +234,9 @@ var HideCitationHighlights = {
   start() {
     if (this.timer !== null) return;
     this._workers = new WeakMap();
+    this._prefObserver = Zotero.Prefs.registerObserver(
+      this.clickPreference, () => this.sweep(), true
+    );
     this.sweep();
     // Pages render asynchronously after a reader opens, and readers open at
     // any time, so poll. Once everything is patched, passes are near no-ops.
@@ -189,12 +249,17 @@ var HideCitationHighlights = {
   },
 
   stop() {
+    if (this._prefObserver !== null) {
+      try { Zotero.Prefs.unregisterObserver(this._prefObserver); } catch (e) {}
+      this._prefObserver = null;
+    }
     try {
       if (this.timer !== null && this._win) this._win.clearInterval(this.timer);
     } catch (e) {}
     this.timer = null;
     try {
       for (const reader of (Zotero.Reader && Zotero.Reader._readers) || []) {
+        this.runOnReader(reader, this.SET_CLICKS_BODY, "clicks", false);
         this.runOnReader(reader, this.RESTORE_BODY, null);
       }
     } catch (e) {}
@@ -202,7 +267,16 @@ var HideCitationHighlights = {
   },
 };
 
-function startup() {
+async function startup() {
+  try {
+    await Zotero.PreferencePanes.register({
+      pluginID: HideCitationHighlights.id,
+      src: "preferences.xhtml",
+      label: "Hide Citation Highlights",
+    });
+  } catch (e) {
+    HideCitationHighlights.log("preference pane error: " + e);
+  }
   HideCitationHighlights.start();
 }
 

@@ -7,7 +7,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 ROOT = Path(__file__).resolve().parent.parent
-FILES = ("manifest.json", "bootstrap.js", "ATTRIBUTION.md", "COPYRIGHT.md")
+FILES = ("manifest.json", "bootstrap.js", "ATTRIBUTION.md", "COPYRIGHT.md", "prefs.js", "preferences.xhtml")
 VERSION = r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
 
 
@@ -18,7 +18,7 @@ def require(condition, message):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--tag", help="Stable release tag, such as v0.2.0")
+    parser.add_argument("--tag", help="Stable release tag, such as v0.3.0")
     parser.add_argument("--repository", help="GitHub owner/repository")
     parser.add_argument("--xpi", type=Path, help="Package to compare with source files")
     parser.add_argument("--updates", type=Path, help="Write an update manifest (requires tag and repository)")
@@ -53,7 +53,7 @@ def main():
     if args.xpi:
         with ZipFile(args.xpi) as archive:
             require(sorted(archive.namelist()) == sorted(FILES),
-                    "Package must contain exactly the four required files at its root")
+                    "Package must contain exactly the required files at its root")
             require(archive.testzip() is None, "Package CRC check failed")
             for name in FILES:
                 require(archive.read(name) == (ROOT / name).read_bytes(),
@@ -84,5 +84,3 @@ if __name__ == "__main__":
         main()
     except (ValueError, KeyError, OSError) as error:
         raise SystemExit(f"Verification failed: {error}") from error
-
-

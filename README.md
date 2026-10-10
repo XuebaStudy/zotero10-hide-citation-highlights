@@ -1,6 +1,6 @@
 # Zotero 10 Hide Citation Highlights
 
-A Zotero 10 plugin by [XuebaStudy](https://github.com/XuebaStudy). It hides persistent blue backgrounds on citations and matched internal cross-reference links in the PDF reader while preserving clickable links, hover feedback, and citation previews.
+A Zotero 10 plugin by [XuebaStudy](https://github.com/XuebaStudy). It hides persistent blue backgrounds on citations and matched internal cross-reference links in the PDF reader while preserving clickable links, hover feedback, and citation previews by default (can be changed).
 
 ## Before and after
 
@@ -46,6 +46,18 @@ This version uses the independent ID `zotero10-hide-citation-highlights@XuebaStu
 
 You must be signed in to GitHub to download Actions artifacts. Build artifacts are retained for 7 days. Repository maintainers can trigger a fresh build with **Run workflow**; pushes and pull requests also trigger builds automatically.
 
+## Optional click blocking
+
+Open Zotero **Settings → Hide Citation Highlights** and enable
+**Disable citation and internal-link clicks** to prevent accidental jumps
+to references, figures, and other sections within a PDF.
+
+The setting is **off by default**. When enabled, citation and PDF internal-link
+clicks and hover previews are disabled. External web links, text selection,
+and annotations remain available. Changes apply immediately to open readers,
+including split views, and are saved across restarts. Clear the checkbox to
+restore link interactions. Disabling the plugin also restores them.
+
 ## Local build
 
 On Windows, run PowerShell from the repository directory:
@@ -59,7 +71,7 @@ The current output is `zotero10-hide-citation-highlights.xpi`.
 On Linux or macOS, use PowerShell 7 with `pwsh -File ./build.ps1`, or a ZIP utility:
 
 ```sh
-zip -j -X zotero10-hide-citation-highlights.xpi manifest.json bootstrap.js ATTRIBUTION.md COPYRIGHT.md
+zip -j -X zotero10-hide-citation-highlights.xpi manifest.json bootstrap.js ATTRIBUTION.md COPYRIGHT.md prefs.js preferences.xhtml
 ```
 
 An `.xpi` is a ZIP archive. `manifest.json` and `bootstrap.js` must be at its root; attribution and copyright documents are also included.
@@ -68,6 +80,7 @@ To check JavaScript syntax and verify the manifest and package (Node.js and Pyth
 
 ```sh
 node --check bootstrap.js
+node --test tests/plugin.test.cjs
 python scripts/verify.py --xpi zotero10-hide-citation-highlights.xpi
 ```
 
@@ -80,8 +93,8 @@ Report problems through [this repository's Issues](https://github.com/XuebaStudy
 Before releasing, confirm the Git push target and complete installation testing. This directory may be a source snapshot without Git metadata; in that case, use a proper checkout before running the release helper.
 
 - `.github/workflows/build.yml` checks JavaScript syntax and builds and verifies packages on Ubuntu and Windows for branch pushes, pull requests, and manual runs. It does not publish releases.
-- `.github/workflows/release.yml` builds and verifies a package when a stable version tag such as `v0.2.0` is pushed. The tag must match `manifest.json`, and the repository must match the manifest's update URL. Publication requires `contents: write` permission for `GITHUB_TOKEN`; no separate personal access token is required.
-- `release.sh` requires Bash, Python 3.9 or later, Node.js, and Git. It checks for a clean checkout and the expected GitHub push target, updates the manifest version, commits the change, and pushes the current branch and version tag. This triggers public release publication. With the repository configured, run it with a version, for example `bash release.sh v0.2.0`. Only stable `X.Y.Z` versions are supported.
+- `.github/workflows/release.yml` builds and verifies a package when a stable version tag such as `v0.3.0` is pushed. The tag must match `manifest.json`, and the repository must match the manifest's update URL. Publication requires `contents: write` permission for `GITHUB_TOKEN`; no separate personal access token is required.
+- `release.sh` requires Bash, Python 3.9 or later, Node.js, and Git. It checks for a clean checkout and the expected GitHub push target, updates the manifest version, commits the change, and pushes the current branch and version tag. This triggers public release publication. With the repository configured, run it with a version, for example `bash release.sh v0.3.0`. Only stable `X.Y.Z` versions are supported.
 
 Each version release publishes `zotero10-hide-citation-highlights.xpi` and `updates.json`, then refreshes `updates.json` under the stable `release` tag. Release runs share a concurrency group to prevent simultaneous update-pointer writes. The housekeeping release is excluded from the latest-release link. Do not rerun an older release after publishing a newer version, as it would replace the update pointer.
 

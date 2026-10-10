@@ -4,7 +4,7 @@ $manifest = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot 'manifest.jso
 if ($manifest.version -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
     throw 'Manifest version must be a stable X.Y.Z version.'
 }
-$files = @('manifest.json', 'bootstrap.js', 'ATTRIBUTION.md', 'COPYRIGHT.md')
+$files = @('manifest.json', 'bootstrap.js', 'ATTRIBUTION.md', 'COPYRIGHT.md', 'prefs.js', 'preferences.xhtml')
 foreach ($name in $files) {
     if (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot $name) -PathType Leaf)) {
         throw "Missing package source: $name"
@@ -22,5 +22,3 @@ try {
     $stream.Dispose()
 }
 Write-Output $output
-
-

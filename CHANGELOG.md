@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — Optional click blocking
+
+- Add a settings pane with an optional, persistent click-blocking setting (off by default).
+- Disable citation and PDF internal-link clicks and hover previews when enabled.
+- Preserve external web links, text selection, annotations, and PDF link data.
+- Apply setting changes to open and future readers, including split views.
+- Restore link interactions when the setting is turned off or the plugin is disabled.
+- Include preference defaults and the settings pane in local and CI packages.
 
 - Translate all project documentation into English and keep source attribution brief.
 - Correct update-manifest compatibility metadata to use applications.zotero for Zotero 7 and later.
@@ -23,5 +30,3 @@
 - Include source attribution and copyright information in the package.
 
 Verification: Automated checks using the actual Page rendering methods from the locally installed Zotero 10.0.3 and package validation have passed. Installation and interaction testing in the interface is still pending. No remote release has been performed.
-
-

@@ -32,6 +32,9 @@ jobs:
       - name: Check JavaScript syntax
         run: node --check bootstrap.js
 
+      - name: Test plugin behavior
+        run: node --test tests/plugin.test.cjs
+
       - name: Validate metadata
         id: meta
         run: python scripts/verify.py --github-output "$env:GITHUB_OUTPUT"
@@ -66,5 +69,3 @@ jobs:
           Extract the downloaded ZIP, then install **$env:XPI_NAME** in Zotero.
           This package works on all supported operating systems. GitHub sign-in is required; the download is retained for 7 days.
           "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
-
-
